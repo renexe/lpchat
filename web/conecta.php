@@ -1,6 +1,7 @@
 <?php
 
 $link = mysqli_connect('127.0.0.1', 'bd850942326440', 'lVnoewHTDwVR6O0R', 'heroku_1821d2fa36478d4');
+echo $link;
 //$link = mysqli_connect('localhost', 'u484911653_admin', 'lVnoewHTDwVR6O0R', 'u484911653_o_proximo_gran');
 
 $lc_time_names = "SET lc_time_names = 'pt_BR'";
