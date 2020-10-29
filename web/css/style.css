@@ -1,0 +1,42 @@
+.cursor-pointer {
+    cursor: pointer;
+}
+
+@media (max-width: 576px) {
+    body{
+        font-size: 0.85rem;
+    }
+    .btn-envia-comentario{
+        min-width: 35%;
+    }
+}
+
+.btn-info {
+    background: rgb(33, 80, 120);
+}
+
+.profile-img-col {
+    padding-left: 15px;
+    width: calc(36px + 15px);
+    text-align: center;
+    margin: auto;
+}
+
+.btn-envia-comentario{
+    color: #fff;
+    background: #90EE90;
+    font-weight: bold;
+    min-width: 20%;
+}
+
+.border-left{
+    border-left: 3px dotted #b3b3b3;
+}
+
+.form-center{
+    margin-left: 50%;
+}
+
+.carregar-mais{
+    max-width: 90%;
+}

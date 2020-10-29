@@ -31,9 +31,6 @@ $cookie_id = cookie();
 
 $html_comentarios = $div_mais_comentarios = $where = $total_comentarios_div = $where_resposta = '';
 $comentarios_por_pagina = 20;
-if (isset($_REQUEST['mais'])) {
-    $comentarios_por_pagina += $_REQUEST['mais'];
-}
 
 // BUSCA OS COMENTÁRIOS
 $select_comentarios = "
@@ -50,7 +47,7 @@ FROM
     LEFT JOIN
         adm a ON c.usuario = a.id
 WHERE
-    aprovado = 1 and resposta = 0
+    aprovado = 1
 ORDER BY
     id DESC
 LIMIT " . $comentarios_por_pagina;
@@ -63,11 +60,15 @@ if ($sql_comentarios = mysqli_query($link, $select_comentarios)) {
             $comentarios[$result_c['id']]['resposta'] = $result_c['resposta'];
             $comentarios[$result_c['id']]['comentario'] = $result_c['comentario'];
             $comentarios[$result_c['id']]['data'] = $result_c['data'];
-            $comentarios[$result_c['id']]['foto'] = $result_c['foto'];
 
             //VERIFICA SE É A CRIS
             if ($result_c['usuario'] == 26) {
                 $foto = 'img/' . $result_c['foto'];
+                if (file_exists($foto)) {
+                    $foto_26 = true;
+                } else {
+                    $foto_26 = false;
+                }
             } else {
                 // BUSCA O NOME DA ÚLTIMA PESSOA QUE COMENTOU NAQUELE IP
                 $select_nome = "SELECT nome, email FROM comentarios WHERE cookie = '" . $cookie_id . "' ORDER BY id DESC LIMIT 1";
@@ -145,14 +146,8 @@ if ($sql_comentarios = mysqli_query($link, $select_comentarios)) {
                         $respostas[$result_c['id']][$result_r['id']]['resposta'] = $result_r['resposta'];
                         $respostas[$result_c['id']][$result_r['id']]['comentario'] = $result_r['comentario'];
                         $respostas[$result_c['id']][$result_r['id']]['data'] = $result_r['data'];
-                        $respostas[$result_c['id']][$result_r['id']]['foto'] = $result_r['foto'];
-                    }
-                    $resposta = $result_r['resposta'];
-                    if ($result_r['usuario'] == 26) {
-                        $foto = 'img/' . $result_r['foto'];
                     }
                 } else {
-                    $resposta = NULL;
                     $total_respostas = 0;
                 }
                 if ($total_respostas > 0) {
@@ -178,7 +173,7 @@ if ($sql_no_comentarios = mysqli_query($link, $select_no_comentarios)) {
             $div_mais_comentarios = '
             <div class="row mt-3">
                 <div class="col">
-                    <button type="button" class="btn btn-info w-80 carregar-mais" data-resposta="' . $resposta . '" style="height: 38px;">
+                    <button type="button" class="btn btn-info w-100 carregar-mais" data-resposta="' . $resposta . '" style="height: 38px;">
                         <span class="spinner-border spinner-border-sm carregar-mais-loading" style="display: none;"></span>
                         <span class="carregar-mais-txt">Carregar mais comentários</span>
                     </button>
@@ -192,132 +187,51 @@ if ($sql_no_comentarios = mysqli_query($link, $select_no_comentarios)) {
     die(mysqli_error($link));
 }
 ?>
-<div class="">
-    <div class="row border-bottom pl-3 mb-1">
-        <div class="col pb-2">
-            <strong>
-                <span id="total-comentarios"><?= $total_comentarios ?></span> Comentário<?= $s_no_comentarios ?></strong>
-        </div>
+<div class="row border-bottom pl-3 mb-1">
+    <div class="col">
+        <strong>
+            <span id="total-comentarios"><?= $total_comentarios ?></span> Comentário<?= $s_no_comentarios ?></strong>
     </div>
-    <div class="row p-3">
-        <div class="col-md-12">
-            <form class="envia-comentario" action="envia-comentario.php" data-resposta="<?= $resposta ?>" method="POST">
-                <div class="form-row">
-                    <div class="col-10 offset-1 offset-md-2 col-md-8">
-                        <input type="text" name="nome" class="form-control form-control-sm nome" value="<?= $nome ?>" placeholder="Nome" maxlength="200" required>
-                    </div>
+</div>
+<div class="row p-3">
+    <div class="col">
+        <form class="envia-comentario" action="envia-comentario.php" data-resposta="<?= $resposta ?>" method="POST">
+            <div class="form-row mb-2">
+                <div class="col">
+                    <textarea class="form-control comentario" name="comentario" maxlength="200" placeholder="Participe da discussão..." required></textarea>
                 </div>
-                <div class="form-row mt-2">
-                    <div class="col-10 offset-1 offset-md-2 col-md-8">
-                        <input type="email" name="email" class="form-control form-control-sm email" value="<?= $email ?>" placeholder="Email" maxlength="255" required>
-                    </div>
+            </div>
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" name="nome" class="form-control nome" value="<?=$nome?>" placeholder="Nome" <?= $readonly?> maxlength="200" required>
                 </div>
-                <div class="form-row mt-2">
-                    <div class="col-xs-12 col-md-10 offset-md-1">
-                        <textarea class="form-control form-control-sm comentario" name="comentario" maxlength="200" placeholder="Deixe seu comentário aqui" required></textarea>
-                    </div>
+            </div>
+            <div class="form-row mt-2">
+                <div class="col">
+                    <input type="email" name="email" class="form-control email" value="<?=$email?>" placeholder="Email" <?=$readonly?> maxlength="255" required>
                 </div>
-                <div class="form-row mt-2">
-                    <div class="col-10 offset-1 offset-md-2 col-md-8 text-center">
-                        <input type="hidden" name="resposta" class="form-control" value="">
-                        <button type="submit" class="btn btn-light border btn-envia-comentario">
-                            <span class="btn-icon">Enviar</span>
+            </div>
+            <div class="form-row mt-2">
+                <div class="col text-right">
+                    <input type="hidden" name="resposta" class="form-control" value="">
+                    <button type="submit" class="btn btn-light border btn-envia-comentario">
+                        <span class="btn-icon">Enviar</i>
                             <span class="spinner-border spinner-border-sm loading" style="display: none"></span>
-                        </button>
-                    </div>
+                    </button>
                 </div>
-            </form>
-        </div>
-    </div>
-    <?php
-    if ($comentarios) {
-        foreach ($comentarios as $id => $comentario) {
-            if ($comentario['resposta'] == 0) {
-                ?>
-                <div class="row py-2 mx-0 row-comentario" data-id="<?= $id ?>">
-                    <?php
-                    if ($comentario['usuario'] == 26) {
-                        ?>
-                        <div class="profile-img-col mb-5">
-                            <img class="mw-100 rounded-circle" src="img/<?= $comentario['foto'] ?>" title="<?= $comentario['nome'] ?>" alt="<?= $comentario['nome'] ?>">
-                        </div>
-                        <?php
-                    }
+            </div>
+        </form>
+        <?php
+        if ($comentarios) {
+            foreach ($comentarios as $id => $comentario) {
+                if ($comentario['resposta'] == 0) {
                     ?>
-                    <div class="col">
-                        <div class="row">
-                            <div class="col-auto text-primary my-auto">
-                                <small>
-                                    <strong><?= $comentario['nome'] ?></strong>
-                                </small>
-                            </div>
-                            <div class="col text-left my-auto">
-                                <small><?= horas($comentario['data']) ?></small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <small class="d-block d-md-none">
-                                <div class="col text-left my-auto"><?= $comentario['comentario'] ?></div>
-                            </small>
-                            <div class="d-none d-md-block col text-left my-auto"><?= $comentario['comentario'] ?></div>
-                        </div>
-                        <div class="row text-muted">
-<!--                            <div class="col-auto">
-                                <div class="like-btn cursor-pointer <?= $avaliou_like ?>" data-id="<?= $id ?>" data-like="1" data-dislike="0">
-                                    <i class="fa fa-thumbs-up"></i> <span class="likes likes-dislikes"><?= $likes[$id] ?></span>
-                                </div>
-                            </div>-->
-                            <!--                                    <div class="col-auto">
-                                                                    <div class="like-btn cursor-pointer <?= $avaliou_dislike ?>" data-id="<?= $id ?>" data-like="0" data-dislike="1">
-                                                                        <i class="fa fa-thumbs-down"></i> <span class="dislikes likes-dislikes"><?= $dislikes[$id] ?></span>
-                                                                    </div>
-                                                                </div>-->
-                            <div class="col my-auto">
-                                <small class="cursor-pointer responder" id="resp<?= $id ?>">Responder<?= $total_respostas_txt[$id] ?></small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row ml-5 py-2 mx-0 form-respostas" id="form<?= $id ?>" hidden="hidden">
-                    <div class="col">
-                        <form class="envia-comentario" action="envia-comentario.php" data-resposta="<?= $resposta ?>" method="POST">
-                            <div class="form-row">
-                                <div class="col-10 offset-1 offset-md-2 col-md-8">
-                                    <input type="text" name="nome" class="form-control form-control-sm nome" value="<?= $nome ?>" placeholder="Nome" maxlength="200" required>
-                                </div>
-                            </div>
-                            <div class="form-row mt-2">
-                                <div class="col-10 offset-1 offset-md-2 col-md-8 offset-xs-1">
-                                    <input type="email" name="email" class="form-control form-control-sm email" value="<?= $email ?>" placeholder="Email" maxlength="255" required>
-                                </div>
-                            </div>
-                            <div class="form-row mt-2">
-                                <div class="col-xs-12 col-md-10 offset-md-1">
-                                    <textarea class="form-control form-control-sm comentario" name="comentario" maxlength="200" placeholder="Deixe seu comentário aqui" required></textarea>
-                                </div>
-                            </div>
-                            <div class="form-row mt-2">
-                                <div class="col-10 offset-1 offset-md-2 col-md-8 text-center">
-                                    <input type="hidden" name="resposta" class="form-control" value="">
-                                    <button type="submit" class="btn btn-light border btn-envia-comentario">
-                                        <span class="btn-icon">Enviar</span>
-                                        <span class="spinner-border spinner-border-sm loading" style="display: none"></span>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <?php
-                if (isset($respostas[$id])) {
-                    foreach ($respostas[$id] as $r_id => $resposta) {
-                        ?>
-                        <div class="row ml-5 py-2 mx-0 mb-2 mt-3 row-comentario border-left" data-id="<?= $r_id ?>">
+                        <div class="row rounded shadow bg-light py-2 mx-0 mb-2 row-comentario" data-id="<?= $id ?>">
                             <?php
-                            if ($resposta['usuario'] == 26) {
+                            if ($foto_26 && $comentario['usuario'] == 26) {
                                 ?>
                                 <div class="profile-img-col mb-5">
-                                    <img class="mw-100 rounded-circle" src="img/<?= $resposta['foto'] ?>" title="<?= $resposta['nome'] ?>" alt="<?= $resposta['nome'] ?>">
+                                    <img class="mw-100 rounded-circle" src="<?= $foto ?>" title="<?= $comentario['nome'] ?>" alt="<?= $comentario['nome'] ?>">
                                 </div>
                                 <?php
                             }
@@ -326,93 +240,122 @@ if ($sql_no_comentarios = mysqli_query($link, $select_no_comentarios)) {
                                 <div class="row">
                                     <div class="col-auto text-primary my-auto">
                                         <small>
-                                            <strong><?= $resposta['nome'] ?></strong>
+                                            <strong><?= $comentario['nome'] ?></strong>
                                         </small>
                                     </div>
                                     <div class="col text-left my-auto">
-                                        <small><?= horas($resposta['data']) ?></small>
+                                        <small><?= horas($comentario['data']) ?></small>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <small class="d-block d-md-none">
-                                        <div class="col text-left my-auto"><?= $resposta['comentario'] ?></div>
-                                    </small>
-                                    <div class="d-none d-md-block col text-left my-auto"><?= $resposta['comentario'] ?></div>
+                                    <div class="col text-left my-auto"><?= $comentario['comentario'] ?></div>
                                 </div>
-<!--                                <div class="row text-muted">
+                                <div class="row text-muted">
                                     <div class="col-auto">
-                                        <div class="like-btn cursor-pointer <?= $avaliou_like ?>" data-id="<?= $r_id ?>" data-like="1" data-dislike="0">
-                                            <i class="fa fa-thumbs-up"></i> <span class="likes likes-dislikes">0</span>
+                                        <div class="like-btn cursor-pointer <?= $avaliou_like ?>" data-id="<?= $id ?>" data-like="1" data-dislike="0">
+                                            <i class="fa fa-thumbs-up"></i> <span class="likes likes-dislikes"><?= $likes[$id] ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="like-btn cursor-pointer <?= $avaliou_dislike ?>" data-id="<?= $id ?>" data-like="0" data-dislike="1">
+                                            <i class="fa fa-thumbs-down"></i> <span class="dislikes likes-dislikes"><?= $dislikes[$id] ?></span>
                                         </div>
                                     </div>
                                     <div class="col my-auto">
-                                        <small class="cursor-pointer responder" id="treplica<?= $id ?>">Responder (0)</small>
+                                        <small class="cursor-pointer responder" id="resp<?= $id ?>">Responder<?= $total_respostas_txt[$id] ?></small>
                                     </div>
-                                </div>-->
+                                </div>
                             </div>
                         </div>
-<!--                        <div class="row ml-5 py-2 mx-0 form-treplicas" id="form<?= $id ?>" hidden="hidden">
+                        <div class="row ml-5 py-2 mx-0 form-respostas" id="form<?= $id ?>" hidden="hidden">
                             <div class="col">
                                 <form class="envia-comentario" action="envia-comentario.php" data-resposta="<?= $resposta ?>" method="POST">
                                     <div class="form-row">
-                                        <div class="col-10 offset-1 offset-md-2 col-md-8">
-                                            <input type="text" name="nome" class="form-control form-control-sm nome" value="<?= $nome ?>" placeholder="Nome" maxlength="200" required>
+                                        <div class="col">
+                                            <input type="text" name="nome" class="form-control nome" value="<?= $nome ?>" placeholder="Nome" <?= $readonly ?> maxlength="200" required>
                                         </div>
                                     </div>
                                     <div class="form-row mt-2">
-                                        <div class="col-10 offset-1 offset-md-2 col-md-8 offset-xs-1">
-                                            <input type="email" name="email" class="form-control form-control-sm email" value="<?= $email ?>" placeholder="Email" maxlength="255" required>
+                                        <div class="col">
+                                            <input type="email" name="email" class="form-control email" value="<?= $email ?>" placeholder="Email" <?= $readonly ?> maxlength="255" required>
                                         </div>
                                     </div>
                                     <div class="form-row mt-2">
-                                        <div class="col-xs-12 col-md-10 offset-md-1">
-                                            <textarea class="form-control form-control-sm comentario" name="comentario" maxlength="200" placeholder="Deixe seu comentário aqui" required></textarea>
+                                        <div class="col">
+                                            <textarea class="form-control comentario" name="comentario" maxlength="200" placeholder="Participe da discussão..." required></textarea>
                                         </div>
                                     </div>
                                     <div class="form-row mt-2">
-                                        <div class="col-10 offset-1 offset-md-2 col-md-8 text-center">
-                                            <input type="hidden" name="resposta" class="form-control" value="">
+                                        <div class="col text-right">
+                                            <input type="hidden" name="resposta" class="form-control" value="<?= $id ?>">
                                             <button type="submit" class="btn btn-light border btn-envia-comentario">
-                                                <span class="btn-icon">Enviar</span>
-                                                <span class="spinner-border spinner-border-sm loading" style="display: none"></span>
+                                                <span class="btn-icon">Enviar</i>
+                                                    <span class="spinner-border spinner-border-sm loading" style="display: none"></span>
                                             </button>
                                         </div>
                                     </div>
                                 </form>
                             </div>
-                        </div>-->
+                        </div>
                         <?php
+                        if ($respostas[$id]) {
+                            foreach ($respostas[$id] as $r_id => $resposta) {
+                                ?>
+                                <div class="row ml-5 py-2 mx-0 mb-2 row-comentario" data-id="<?= $r_id ?>">
+                                    <?php
+                                    if ($foto_26 && $resposta['usuario'] == 26) {
+                                        ?>
+                                        <div class="profile-img-col mb-5">
+                                            <img class="mw-100 rounded-circle" src="<?= $foto ?>" title="<?= $resposta['nome'] ?>" alt="<?= $resposta['nome'] ?>">
+                                        </div>
+                                        <?php
+                                    }
+                                    ?>
+                                    <div class="col">
+                                        <div class="row">
+                                            <div class="col-auto text-primary my-auto">
+                                                <small>
+                                                    <strong><?= $resposta['nome'] ?></strong>
+                                                </small>
+                                            </div>
+                                            <div class="col text-left my-auto">
+                                                <small><?= horas($resposta['data']) ?></small>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col text-left my-auto"><?= $resposta['comentario'] ?></div>
+                                        </div>
+                                        <div class="row text-muted">
+                                            <div class="col-auto">
+                                                <div class="like-btn cursor-pointer <?= $avaliou_like ?>" data-id="<?= $r_id ?>" data-like="1" data-dislike="0">
+                                                    <i class="fa fa-thumbs-up"></i> <span class="likes likes-dislikes"><?= $likes[$r_id] ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <div class="like-btn cursor-pointer <?= $avaliou_dislike ?>" data-id="<?= $r_id ?>" data-like="0" data-dislike="1">
+                                                    <i class="fa fa-thumbs-down"></i> <span class="dislikes likes-dislikes"><?= $dislikes[$r_id] ?></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php
+                        }
                     }
+                    ?>
+                    <!--<hr>-->
+                    <?php
                 }
-                ?>
-
-                <div class='row pl-3 pb-1 border-bottom'></div>
-                <?php
             }
+        } else {
+            ?>
+            <div class='row'>
+                <div class='col text-center'>Seja o primeiro ou a primeira a comentar.</div>
+            </div>
+            <?php
         }
         ?>
-
-        <?php
-    } else {
-        ?>
-        <div class='row p-5'>
-            <div class='col text-center'>Seja o primeiro(a) a comentar.</div>
-        </div>
-        <?php
-    }
-    ?>
-    <div class="row mt-3">
-        <div class="col-10 offset-1">
-            <a href="index.php?mais=<?= $comentarios_por_pagina ?>">
-                <button type="button" class="btn btn-info w-100 carregar-mais" style="height: 38px;">
-                    <span class="spinner-border spinner-border-sm carregar-mais-loading" style="display: none;"></span>
-                    <span class="carregar-mais-txt"><small>Carregar mais comentários</small></span>
-                </button>
-            </a>
-        </div>
     </div>
-    <hr class="pb-3 d-block md-none">
-    <hr class="pb-5 d-none md-block">
 </div>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" crossorigin="anonymous">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">

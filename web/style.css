@@ -1,0 +1,33 @@
+.cursor-pointer {
+    cursor: pointer;
+}
+
+@media (max-width: 576px) {
+    .nav-link{
+        font-size: 0.85rem;
+    }
+}
+
+.btn-info {
+    background: rgb(33, 80, 120);
+}
+
+.profile-img-col {
+    padding-left: 15px;
+    width: calc(36px + 15px);
+    text-align: center;
+    margin: auto;
+}
+
+.btn-envia-comentario{
+    font-weight: bold;
+    min-width: 20%;
+}
+
+.border-left{
+    border-left: 3px dotted #b3b3b3;
+}
+
+.form-center{
+    margin-left: 50%;
+}
