@@ -1,5 +1,5 @@
 <?php
-ini_set('display_errors', 'OFF');
+ini_set('display_errors', 'ON');
 error_reporting(E_ALL | E_STRICT);
 session_start();
 
